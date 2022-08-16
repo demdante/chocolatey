@@ -1,4 +1,18 @@
-﻿function Update-SessionEnvironment {
+﻿function Get-EnvironmentVariable([string] $Name, [System.EnvironmentVariableTarget] $Scope) {
+  [Environment]::GetEnvironmentVariable($Name, $Scope)
+}
+
+function Get-EnvironmentVariableNames([System.EnvironmentVariableTarget] $Scope) {
+  switch ($Scope) {
+      'User' { Get-Item 'HKCU:\Environment' | Select-Object -ExpandProperty Property }
+      'Machine' { Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment' | Select-Object -ExpandProperty Property }
+      'Process' { Get-ChildItem Env:\ | Select-Object -ExpandProperty Key }
+      default { throw "Unsupported environment scope: $Scope" }
+  }
+}
+
+
+function Update-SessionEnvironment {
 <#
 .SYNOPSIS
 Updates the environment variables of the current powershell session with
@@ -17,7 +31,8 @@ Use the Update-SessionEnvironment command to refresh the current
 powershell session with all environment settings possibly performed by
 chocolatey package installs.
 
-#>
+#>
+
   Write-Debug "Running 'Update-SessionEnvironment' - Updating the environment variables for the session."
 
   #ordering is important here, $user comes after so we can override $machine
